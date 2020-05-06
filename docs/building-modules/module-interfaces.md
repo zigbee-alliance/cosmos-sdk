@@ -157,7 +157,6 @@ A few things to note:
 * `resolveNameHandler` is the query request handler defined by the module developer. It also takes the application `codec` and `CLIContext` passed in from the user side, as well as the `storeName`.
 * `"GET"` is the HTTP Request method. As to be expected, queries are typically GET requests. Transactions are typically POST and PUT requests.
 
-
 ## Next {hide}
 
 Read about the recommended [module structure](./structure.md) {hide}
