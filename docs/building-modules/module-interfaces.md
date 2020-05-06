@@ -148,12 +148,7 @@ The router used by the SDK is [Gorilla Mux](https://github.com/gorilla/mux). The
 
 Here is a `registerRoutes` function with one query route example from the [nameservice tutorial](https://cosmos.network/docs/tutorial/rest.html):
 
-``` go
-func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, cdc *codec.Codec, storeName string) {
-  // ResolveName Query
-  r.HandleFunc(fmt.Sprintf("/%s/names/{%s}", storeName, restName), resolveNameHandler(cdc, cliCtx, storeName)).Methods("GET")
-}
-```
++++ https://github.com/cosmos/sdk-tutorials/blob/master/nameservice/x/nameservice/client/rest/rest.go#L16-L23
 
 A few things to note:
 
