@@ -16,7 +16,7 @@ import (
 )
 
 func NewTestTxGenerator() client.TxGenerator {
-	_, cdc := simapp.MakeCodecs()
+	_, _, cdc := simapp.MakeCodecs()
 	return types.StdTxGenerator{Cdc: cdc}
 }
 

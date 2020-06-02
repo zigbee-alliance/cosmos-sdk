@@ -20,16 +20,15 @@ import (
 	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
-	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
 )
 
 var (
-	appCodec, cdc = simapp.MakeCodecs()
+	encodingConfig = simapp.MakeEncodingConfig()
 )
 
 func init() {
-	authclient.Codec = appCodec
+	authclient.Codec = encodingConfig.Marshaler
 }
 
 func main() {
@@ -62,10 +61,10 @@ func main() {
 	rootCmd.AddCommand(
 		rpc.StatusCommand(),
 		client.ConfigCmd(simapp.DefaultCLIHome),
-		queryCmd(cdc),
-		txCmd(cdc),
+		queryCmd(encodingConfig.Amino),
+		txCmd(),
 		flags.LineBreak,
-		lcd.ServeCommand(cdc, registerRoutes),
+		lcd.ServeCommand(encodingConfig.Amino, registerRoutes),
 		flags.LineBreak,
 		keys.Commands(),
 		flags.LineBreak,
@@ -108,7 +107,7 @@ func queryCmd(cdc *codec.Codec) *cobra.Command {
 	return queryCmd
 }
 
-func txCmd(cdc *codec.Codec) *cobra.Command {
+func txCmd() *cobra.Command {
 	txCmd := &cobra.Command{
 		Use:                        "tx",
 		Short:                      "Transactions subcommands",
@@ -117,12 +116,7 @@ func txCmd(cdc *codec.Codec) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	clientCtx := client.Context{}
-	clientCtx = clientCtx.
-		WithJSONMarshaler(appCodec).
-		WithTxGenerator(types.StdTxGenerator{Cdc: cdc}).
-		WithAccountRetriever(types.NewAccountRetriever(appCodec)).
-		WithCodec(cdc)
+	clientCtx := MakeTxCLIContext()
 
 	txCmd.AddCommand(
 		bankcmd.NewSendTxCmd(clientCtx),

@@ -100,15 +100,8 @@ func SimulateMsgSetWithdrawAddress(ak types.AccountKeeper, bk types.BankKeeper, 
 
 		msg := types.NewMsgSetWithdrawAddress(simAccount.Address, simToAccount.Address)
 
-		tx := helpers.GenTx(
-			[]sdk.Msg{msg},
-			fees,
-			helpers.DefaultGenTxGas,
-			chainID,
-			[]uint64{account.GetAccountNumber()},
-			[]uint64{account.GetSequence()},
-			simAccount.PrivKey,
-		)
+		txGen := simappparams.MakeEncodingConfig().TxGenerator
+		tx := helpers.GenTx(txGen, []sdk.Msg{msg}, fees, helpers.DefaultGenTxGas, chainID, []uint64{account.GetAccountNumber()}, []uint64{account.GetSequence()}, simAccount.PrivKey)
 
 		_, _, err = app.Deliver(tx)
 		if err != nil {
@@ -147,15 +140,8 @@ func SimulateMsgWithdrawDelegatorReward(ak types.AccountKeeper, bk types.BankKee
 
 		msg := types.NewMsgWithdrawDelegatorReward(simAccount.Address, validator.GetOperator())
 
-		tx := helpers.GenTx(
-			[]sdk.Msg{msg},
-			fees,
-			helpers.DefaultGenTxGas,
-			chainID,
-			[]uint64{account.GetAccountNumber()},
-			[]uint64{account.GetSequence()},
-			simAccount.PrivKey,
-		)
+		txGen := simappparams.MakeEncodingConfig().TxGenerator
+		tx := helpers.GenTx(txGen, []sdk.Msg{msg}, fees, helpers.DefaultGenTxGas, chainID, []uint64{account.GetAccountNumber()}, []uint64{account.GetSequence()}, simAccount.PrivKey)
 
 		_, _, err = app.Deliver(tx)
 		if err != nil {
@@ -197,15 +183,8 @@ func SimulateMsgWithdrawValidatorCommission(ak types.AccountKeeper, bk types.Ban
 
 		msg := types.NewMsgWithdrawValidatorCommission(validator.GetOperator())
 
-		tx := helpers.GenTx(
-			[]sdk.Msg{msg},
-			fees,
-			helpers.DefaultGenTxGas,
-			chainID,
-			[]uint64{account.GetAccountNumber()},
-			[]uint64{account.GetSequence()},
-			simAccount.PrivKey,
-		)
+		txGen := simappparams.MakeEncodingConfig().TxGenerator
+		tx := helpers.GenTx(txGen, []sdk.Msg{msg}, fees, helpers.DefaultGenTxGas, chainID, []uint64{account.GetAccountNumber()}, []uint64{account.GetSequence()}, simAccount.PrivKey)
 
 		_, _, err = app.Deliver(tx)
 		if err != nil {
@@ -247,15 +226,8 @@ func SimulateMsgFundCommunityPool(ak types.AccountKeeper, bk types.BankKeeper, k
 		}
 
 		msg := types.NewMsgFundCommunityPool(fundAmount, funder.Address)
-		tx := helpers.GenTx(
-			[]sdk.Msg{msg},
-			fees,
-			helpers.DefaultGenTxGas,
-			chainID,
-			[]uint64{account.GetAccountNumber()},
-			[]uint64{account.GetSequence()},
-			funder.PrivKey,
-		)
+		txGen := simappparams.MakeEncodingConfig().TxGenerator
+		tx := helpers.GenTx(txGen, []sdk.Msg{msg}, fees, helpers.DefaultGenTxGas, chainID, []uint64{account.GetAccountNumber()}, []uint64{account.GetSequence()}, funder.PrivKey)
 
 		_, _, err = app.Deliver(tx)
 		if err != nil {

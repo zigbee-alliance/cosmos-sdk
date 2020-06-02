@@ -33,7 +33,17 @@ func GenTx(msgs []sdk.Msg, feeAmt sdk.Coins, gas uint64, chainID string, accnums
 
 	for i, p := range priv {
 		// use a empty chainID for ease of testing
-		sig, err := p.Sign(auth.StdSignBytes(chainID, accnums[i], seq[i], fee, msgs, memo))
+		signBytes, err := gen.SignModeHandler().GetSignBytes(signMode, types.SigningData{
+			PublicKey:       nil,
+			ChainID:         chainID,
+			AccountNumber:   accnums[i],
+			AccountSequence: seq[i],
+		}, tx.GetTx())
+
+		if err != nil {
+			panic(err)
+		}
+		sig, err := p.Sign(signBytes)
 		if err != nil {
 			panic(err)
 		}
