@@ -161,6 +161,78 @@ func makeMultiSignCmd(cdc *codec.Codec) func(cmd *cobra.Command, args []string) 
 	}
 }
 
+// GetSignCommand returns the sign command
+func GetMultiSignBatchCommand(cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "multisign-batch [file] [name] [[batch]...]",
+		Short: "Generate multisig signatures for transaction batches",
+		Long: strings.TrimSpace(
+			fmt.Sprintf(`Generate multisig signatures for transaction batch files generated with sign-batch --signature-only.
+
+Read signature batch(s) from [batch] file(s) and an unsigned transaction from [file],
+generate multisig transactions as signed by the multisig key [name], and print their
+JSON encoding, delimited by '\n'. If the flag --signature-only flag is on, it outputs
+JSON representations of the generated multisig signatures only.
+
+Example:
+$ %s multisign transaction.json keyname batch1sig.json batch2sig.json batch3sig.json
+
+The --offline flag makes sure that the client will not reach out to an external node.
+Thus account number or sequence number lookups will not be performed and it is
+recommended to set such parameters manually.
+`,
+				version.ClientName,
+			),
+		),
+		RunE: makeBatchMultisigCmd(cdc),
+		Args: cobra.MinimumNArgs(3),
+	}
+
+	cmd.Flags().Bool(flagSigOnly, false, "Print only the generated signature, then exit")
+	cmd.Flags().String(flags.FlagOutputDocument, "", "The document will be written to the given file instead of STDOUT")
+
+	// Add the flags here and return the command
+	return flags.PostCommands(cmd)[0]
+}
+
+func makeBatchMultisigCmd(cdc *codec.Codec) func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, args []string) (err error) {
+		// stdTx, err := authclient.ReadStdTxFromFile(cdc, args[0])
+		// if err != nil {
+		// 	return
+		// }
+		//
+		// inBuf := bufio.NewReader(cmd.InOrStdin())
+		//
+		// kb, err := keyring.New(sdk.KeyringServiceName(),
+		// 	viper.GetString(flags.FlagKeyringBackend), viper.GetString(flags.FlagHome), inBuf)
+		// if err != nil {
+		// 	return
+		// }
+		//
+		// multisigInfo, err := kb.Key(args[1])
+		// if err != nil {
+		// 	return
+		// }
+		//
+		// if multisigInfo.GetType() != keyring.TypeMulti {
+		// 	return fmt.Errorf("%q must be of type %s: %s", args[1], keyring.TypeMulti, multisigInfo.GetType())
+		// }
+		//
+		// var signatureBatch [][]types.StdSignature
+		// for i := 2; i < len(args); i++ {
+		// 	signatures, err := utils.ReadSignaturesFromFile(cdc, args[i])
+		// 	if err != nil {
+		// 		return errors.Wrap(err, fmt.Sprintf("error getting signatures from file %s", args[i]))
+		// 	}
+		//
+		// 	signatureBatch = append(signatureBatch, signatures)
+		// }
+
+		return nil
+	}
+}
+
 func readAndUnmarshalStdSignature(cdc *codec.Codec, filename string) (stdSig types.StdSignature, err error) { //nolint:staticcheck
 	var bytes []byte
 	if bytes, err = ioutil.ReadFile(filename); err != nil {
