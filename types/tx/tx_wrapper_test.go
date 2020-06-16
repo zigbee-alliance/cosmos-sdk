@@ -5,6 +5,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
 
@@ -16,7 +17,7 @@ import (
 )
 
 func TestTxWrapper(t *testing.T) {
-	_, pubkey, addr := authtypes.KeyTestPubAddr()
+	priv, pubkey, addr := authtypes.KeyTestPubAddr()
 
 	marshaler := codec.NewHybridCodec(codec.New(), codectypes.NewInterfaceRegistry())
 	tx := NewBuilder(marshaler, std.DefaultPublicKeyCodec{})
@@ -87,7 +88,19 @@ func TestTxWrapper(t *testing.T) {
 	require.NotEqual(t, authInfoBytes, tx.GetAuthInfoBytes())
 	tx.SetGas(fee.GasLimit)
 	require.NotEqual(t, authInfoBytes, tx.GetAuthInfoBytes())
-	tx.SetSignerInfos(signerInfo)
+
+	stdFee := auth.StdFee{Amount: sdk.NewCoins(sdk.NewInt64Coin("atom", 150)), Gas: 20000}
+	sig, err := priv.Sign(auth.StdSignBytes("", 1, 1, stdFee, msgs, memo))
+	var signatureV2 = signing.SignatureV2{
+		PubKey: pubkey,
+		Data: &signing.SingleSignatureData{
+			SignMode:  signing.SignMode_SIGN_MODE_DIRECT,
+			Signature: sig,
+		},
+	}
+
+	tx.SetSignaturesV2(signatureV2)
+
 	// once fee, gas and signerInfos are all set, AuthInfo bytes should match
 	require.Equal(t, authInfoBytes, tx.GetAuthInfoBytes())
 
