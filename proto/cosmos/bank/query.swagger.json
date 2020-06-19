@@ -1,0 +1,113 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "cosmos/bank/query.proto",
+    "version": "version not set"
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/cosmos/bank/balances/{address}": {
+      "get": {
+        "summary": "Balance queries the balance of a single coin for a single account",
+        "operationId": "Balance",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/bankQueryBalanceResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "address",
+            "description": "address is the address to query balances for",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "byte"
+          },
+          {
+            "name": "denom",
+            "description": "denom is the coin denom to query balances for.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Query"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "bankQueryAllBalancesResponse": {
+      "type": "object",
+      "properties": {
+        "balances": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/cosmosCoin"
+          },
+          "title": "balances is the balances of the coins"
+        }
+      },
+      "title": "QueryAllBalancesResponse is the response type for the Query/AllBalances RPC method"
+    },
+    "bankQueryBalanceResponse": {
+      "type": "object",
+      "properties": {
+        "balance": {
+          "$ref": "#/definitions/cosmosCoin",
+          "title": "balance is the balance of the coin"
+        }
+      },
+      "title": "QueryBalanceResponse is the response type for the Query/Balance RPC method"
+    },
+    "bankQuerySupplyOfResponse": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "string",
+          "title": "amount is the supply of the coin"
+        }
+      },
+      "title": "QuerySupplyOfResponse is the response type for the Query/SupplyOf RPC method"
+    },
+    "bankQueryTotalSupplyResponse": {
+      "type": "object",
+      "properties": {
+        "supply": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/cosmosCoin"
+          },
+          "title": "supply is the supply of the coins"
+        }
+      },
+      "title": "QueryTotalSupplyResponse is the response type for the Query/TotalSupply RPC method"
+    },
+    "cosmosCoin": {
+      "type": "object",
+      "properties": {
+        "denom": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string"
+        }
+      },
+      "description": "Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto."
+    }
+  }
+}

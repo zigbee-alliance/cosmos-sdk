@@ -3,13 +3,18 @@ package cosmos.bank;
 
 import "gogoproto/gogo.proto";
 import "cosmos/cosmos.proto";
+import "google/api/annotations.proto";
 
 option go_package = "github.com/cosmos/cosmos-sdk/x/bank/types";
 
 // Query provides defines the gRPC querier service
 service Query {
     // Balance queries the balance of a single coin for a single account
-    rpc Balance (QueryBalanceRequest) returns (QueryBalanceResponse) { }
+    rpc Balance (QueryBalanceRequest) returns (QueryBalanceResponse) {
+        option (google.api.http) = {
+            get: "/cosmos/bank/balances/{address}"
+        };
+    }
 
     // AllBalances queries the balance of all coins for a single account
     rpc AllBalances (QueryAllBalancesRequest) returns (QueryAllBalancesResponse) { }
