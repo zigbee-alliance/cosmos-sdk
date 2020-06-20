@@ -55,9 +55,8 @@ func GetBalancesCmd(clientCtx client.Context) *cobra.Command {
 			}
 
 			denom := viper.GetString(flagDenom)
-			key := viper.GetString(flagKey)
 			pageReq := &query.PageRequest{
-				Key:        []byte(key),
+				Key:        []byte(denom),
 				Offset:     viper.GetUint64(flagOffset),
 				Limit:      viper.GetUint64(flagLimit),
 				CountTotal: viper.GetBool(flagCountTotal),

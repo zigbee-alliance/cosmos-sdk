@@ -83,6 +83,7 @@ func Paginate(
 
 	var count uint64
 	var nextKey []byte
+	var currentKey []byte
 
 	for ; iterator.Valid(); iterator.Next() {
 		count++
@@ -95,9 +96,19 @@ func Paginate(
 			if err != nil {
 				return nil, err
 			}
+			currentKey = iterator.Key()
 		} else if !countTotal {
 			nextKey = iterator.Key()
 			break
+		}
+	}
+
+	iterator = prefixStore.Iterator(currentKey, nil)
+	defer iterator.Close()
+	if iterator.Valid() {
+		iterator.Next()
+		if iterator.Valid() {
+			nextKey = iterator.Key()
 		}
 	}
 
