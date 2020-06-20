@@ -31,7 +31,7 @@ func TestCLIValidateSignatures(t *testing.T) {
 	barAddr := f.KeyAddress(cli.KeyBar)
 
 	// generate sendTx with default gas
-	success, stdout, stderr := bankcli.TxSend(f, fooAddr.String(), barAddr, sdk.NewInt64Coin("stake", 10), "--generate-only")
+	success, stdout, stderr := bankcli.NewTxSend(f, fooAddr, barAddr, sdk.NewInt64Coin("stake", 10), "--generate-only")
 	require.True(t, success)
 	require.Empty(t, stderr)
 

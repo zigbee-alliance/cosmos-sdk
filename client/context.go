@@ -58,6 +58,13 @@ type Context struct {
 	Codec *codec.Codec
 }
 
+func NewContextForTest(rpcClient rpcclient.Client, chainID string) Context {
+	return Context{
+		Client:  rpcClient,
+		ChainID: chainID,
+	}
+}
+
 // NewContextWithInputAndFrom returns a new initialized Context with parameters from the
 // command line using Viper. It takes a io.Reader and and key name or address and populates
 // the FromName and  FromAddress field accordingly. It will also create Tendermint verifier

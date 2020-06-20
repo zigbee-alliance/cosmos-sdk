@@ -10,6 +10,7 @@ import (
 
 	tmtypes "github.com/tendermint/tendermint/types"
 
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/simapp"
@@ -19,6 +20,7 @@ import (
 // Fixtures is used to setup the testing environment
 type Fixtures struct {
 	BuildDir       string
+	Context        client.Context
 	RootDir        string
 	SimdBinary     string
 	SimcliBinary   string
