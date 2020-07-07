@@ -75,6 +75,17 @@ type APIConfig struct {
 	// Ref: https://github.com/cosmos/cosmos-sdk/issues/6420
 }
 
+// StateSyncConfig defines the state sync snapshot configuration.
+type StateSyncConfig struct {
+	// SnapshotInterval sets the interval at which state sync snapshots are taken.
+	// 0 disables snapshots. Must be a multiple of PruningKeepEvery.
+	SnapshotInterval uint64 `mapstructure:"snapshot-interval"`
+
+	// SnapshotKeepRecent sets the number of recent state sync snapshots to keep.
+	// 0 keeps all snapshots.
+	SnapshotKeepRecent uint32 `mapstructure:"snapshot-keep-recent"`
+}
+
 // Config defines the server's top level configuration
 type Config struct {
 	BaseConfig `mapstructure:",squash"`
@@ -82,6 +93,7 @@ type Config struct {
 	// Telemetry defines the application telemetry configuration
 	Telemetry telemetry.Config `mapstructure:"telemetry"`
 	API       APIConfig        `mapstructure:"api"`
+	StateSync StateSyncConfig  `mapstructure:"state-sync"`
 }
 
 // SetMinGasPrices sets the validator's minimum gas prices.
@@ -134,6 +146,10 @@ func DefaultConfig() *Config {
 			RPCReadTimeout:     10,
 			RPCMaxBodyBytes:    1000000,
 		},
+		StateSync: StateSyncConfig{
+			SnapshotInterval:   0,
+			SnapshotKeepRecent: 2,
+		},
 	}
 }
 
@@ -176,6 +192,10 @@ func GetConfig(v *viper.Viper) Config {
 			RPCWriteTimeout:    v.GetUint("api.rpc-write-timeout"),
 			RPCMaxBodyBytes:    v.GetUint("api.rpc-max-body-bytes"),
 			EnableUnsafeCORS:   v.GetBool("api.enabled-unsafe-cors"),
+		},
+		StateSync: StateSyncConfig{
+			SnapshotInterval:   v.GetUint64("state-sync.snapshot-interval"),
+			SnapshotKeepRecent: v.GetUint32("state-sync.snapshot-keep-recent"),
 		},
 	}
 }

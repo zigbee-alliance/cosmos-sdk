@@ -6,6 +6,7 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/cosmos/cosmos-sdk/snapshots"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -47,6 +48,22 @@ func SetTrace(trace bool) func(*BaseApp) {
 // inter-block cache.
 func SetInterBlockCache(cache sdk.MultiStorePersistentCache) func(*BaseApp) {
 	return func(app *BaseApp) { app.setInterBlockCache(cache) }
+}
+
+// SetSnapshotInterval sets the snapshot interval.
+// FIXME This needs to verify that it is a multiple of PruningOptions.KeepEvery.
+func SetSnapshotInterval(interval uint64) func(*BaseApp) {
+	return func(app *BaseApp) { app.snapshotInterval = interval }
+}
+
+// SetSnapshotKeepRecent sets the recent snapshots to keep.
+func SetSnapshotKeepRecent(keepRecent uint32) func(*BaseApp) {
+	return func(app *BaseApp) { app.snapshotKeepRecent = keepRecent }
+}
+
+// SetSnapshotStore sets the snapshot store.
+func SetSnapshotStore(snapshotStore *snapshots.Store) func(*BaseApp) {
+	return func(app *BaseApp) { app.SetSnapshotStore(snapshotStore) }
 }
 
 func (app *BaseApp) SetName(name string) {
@@ -168,4 +185,12 @@ func (app *BaseApp) SetRouter(router sdk.Router) {
 		panic("SetRouter() on sealed BaseApp")
 	}
 	app.router = router
+}
+
+// SetSnapshotStore sets the snapshot store.
+func (app *BaseApp) SetSnapshotStore(snapshotStore *snapshots.Store) {
+	if app.sealed {
+		panic("SetSnapshotStore() on sealed BaseApp")
+	}
+	app.snapshotManager = snapshots.NewManager(snapshotStore, app.cms)
 }
