@@ -2,6 +2,8 @@ package network
 
 import (
 	"bufio"
+	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +14,10 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/cosmos/cosmos-sdk/simapp/simd/cmd"
+	"github.com/cosmos/cosmos-sdk/tests/cli"
+	"github.com/spf13/cobra"
 
 	"github.com/stretchr/testify/require"
 	tmcfg "github.com/tendermint/tendermint/config"
@@ -75,6 +81,7 @@ type Config struct {
 	PruningStrategy  string                     // the pruning strategy each validator will have
 	EnableLogging    bool                       // enable Tendermint logging to STDOUT
 	CleanupDir       bool                       // remove base temporary directory during cleanup
+	MakeRootCmd      func() *cobra.Command
 }
 
 // DefaultConfig returns a sane default configuration suitable for nearly all
@@ -99,6 +106,7 @@ func DefaultConfig() Config {
 		BondedTokens:     sdk.TokensFromConsensusPower(100),
 		PruningStrategy:  storetypes.PruningOptionNothing,
 		CleanupDir:       true,
+		MakeRootCmd:      cmd.RootCmd,
 	}
 }
 
@@ -413,4 +421,28 @@ func (n *Network) Cleanup() {
 	}
 
 	n.T.Log("finished cleaning up test network")
+}
+
+var _ cli.Fixtures2 = &Network{}
+
+func (n *Network) ExecCmd(args []string) ([]byte, error) {
+	buf := new(bytes.Buffer)
+
+	clientCtx := n.Validators[0].ClientCtx
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, client.ClientContextKey, &clientCtx)
+	ctx = context.WithValue(ctx, server.ServerContextKey, server.NewDefaultContext())
+
+	cmd := n.config.MakeRootCmd()
+	cmd.SetErr(buf)
+	cmd.SetOut(buf)
+
+	cmd.SetArgs(args)
+
+	if err := cmd.ExecuteContext(ctx); err != nil {
+		return buf.Bytes(), err
+	}
+
+	return buf.Bytes(), nil
 }

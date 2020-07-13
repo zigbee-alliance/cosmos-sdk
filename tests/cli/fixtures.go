@@ -79,3 +79,7 @@ func (f Fixtures) GenesisState() simapp.GenesisState {
 	require.NoError(f.T, f.Cdc.UnmarshalJSON(genDoc.AppState, &appState))
 	return appState
 }
+
+type Fixtures2 interface {
+	ExecCmd(args []string) ([]byte, error)
+}

@@ -1,42 +1,29 @@
 package testutil
 
 import (
-	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/cosmos/cosmos-sdk/client"
 	clientkeys "github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/tests"
 	"github.com/cosmos/cosmos-sdk/tests/cli"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	bankcli "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
 )
 
-func MsgSendExec(clientCtx client.Context, from, to, amount fmt.Stringer, extraArgs ...string) ([]byte, error) {
-	buf := new(bytes.Buffer)
-	clientCtx = clientCtx.WithOutput(buf)
+func MsgSendExec(f cli.Fixtures2, from, to, amount fmt.Stringer, extraArgs ...string) ([]byte, error) {
+	args := []string{"tx", "bank", "send", from.String(), to.String(), amount.String()}
+	args = append(args, extraArgs...)
+	return f.ExecCmd(args)
+}
 
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, client.ClientContextKey, &clientCtx)
-
-	args := []string{from.String(), to.String(), amount.String()}
+func QueryBalancesExec(f cli.Fixtures2, address fmt.Stringer, extraArgs ...string) ([]byte, error) {
+	args := []string{address.String()}
 	args = append(args, extraArgs...)
 
-	cmd := bankcli.NewSendTxCmd()
-	cmd.SetErr(buf)
-	cmd.SetOut(buf)
-	cmd.SetArgs(args)
-
-	if err := cmd.ExecuteContext(ctx); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
+	return f.ExecCmd(args)
 }
 
 // ----------------------------------------------------------------------------

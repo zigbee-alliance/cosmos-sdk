@@ -1,4 +1,4 @@
-package cli_test
+package cmd
 
 import (
 	"testing"
@@ -8,11 +8,15 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	banktestutil "github.com/cosmos/cosmos-sdk/x/bank/client/testutil"
+	crisistestutil "github.com/cosmos/cosmos-sdk/x/crisis/client/testutil"
 )
 
-func TestIntegrationTestSuite(t *testing.T) {
+func TestIntegrationTestSuites(t *testing.T) {
+	t.Parallel()
+
 	cfg := network.DefaultConfig()
 	cfg.NumValidators = 1
 
 	suite.Run(t, banktestutil.NewIntegrationTestSuite(cfg))
+	suite.Run(t, crisistestutil.NewIntegrationTestSuite(cfg))
 }

@@ -32,26 +32,13 @@ import (
 )
 
 var (
-	rootCmd = &cobra.Command{
-		Use:   "simd",
-		Short: "simulation app",
-		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
-			if err := client.SetCmdClientContextHandler(initClientCtx, cmd); err != nil {
-				return err
-			}
-			return server.InterceptConfigsPreRunHandler(cmd)
-		},
-	}
-
 	encodingConfig = simapp.MakeEncodingConfig()
-	initClientCtx  = client.Context{}.
-			WithJSONMarshaler(encodingConfig.Marshaler).
-			WithTxGenerator(encodingConfig.TxGenerator).
-			WithCodec(encodingConfig.Amino).
-			WithInput(os.Stdin).
-			WithAccountRetriever(types.NewAccountRetriever(encodingConfig.Marshaler)).
-			WithBroadcastMode(flags.BroadcastBlock)
 )
+
+func init() {
+	authclient.Codec = encodingConfig.Marshaler
+
+}
 
 // Execute executes the root command.
 func Execute() error {
@@ -65,12 +52,29 @@ func Execute() error {
 	ctx = context.WithValue(ctx, client.ClientContextKey, &client.Context{})
 	ctx = context.WithValue(ctx, server.ServerContextKey, server.NewDefaultContext())
 
-	executor := cli.PrepareBaseCmd(rootCmd, "", simapp.DefaultNodeHome)
-	return executor.ExecuteContext(ctx)
+	cmd := RootCmd()
+	return cmd.ExecuteContext(ctx)
 }
 
-func init() {
-	authclient.Codec = encodingConfig.Marshaler
+func RootCmd() *cobra.Command {
+	initClientCtx := client.Context{}.
+		WithJSONMarshaler(encodingConfig.Marshaler).
+		WithTxGenerator(encodingConfig.TxGenerator).
+		WithCodec(encodingConfig.Amino).
+		WithInput(os.Stdin).
+		WithAccountRetriever(types.NewAccountRetriever(encodingConfig.Marshaler)).
+		WithBroadcastMode(flags.BroadcastBlock)
+
+	rootCmd := &cobra.Command{
+		Use:   "simd",
+		Short: "simulation app",
+		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
+			if err := client.SetCmdClientContextHandler(initClientCtx, cmd); err != nil {
+				return err
+			}
+			return server.InterceptConfigsPreRunHandler(cmd)
+		},
+	}
 
 	rootCmd.AddCommand(
 		genutilcli.InitCmd(simapp.ModuleBasics, simapp.DefaultNodeHome),
@@ -89,13 +93,16 @@ func init() {
 	// add keybase, auxiliary RPC, query, and tx child commands
 	rootCmd.AddCommand(
 		rpc.StatusCommand(),
-		queryCommand(),
-		txCommand(),
+		queryCommand(initClientCtx),
+		txCommand(initClientCtx),
 		keys.Commands(),
 	)
+
+	executor := cli.PrepareBaseCmd(rootCmd, "", simapp.DefaultNodeHome)
+	return executor.Command
 }
 
-func queryCommand() *cobra.Command {
+func queryCommand(initClientCtx client.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                        "query",
 		Aliases:                    []string{"q"},
@@ -119,7 +126,7 @@ func queryCommand() *cobra.Command {
 	return cmd
 }
 
-func txCommand() *cobra.Command {
+func txCommand(initClientCtx client.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                        "tx",
 		Short:                      "Transactions subcommands",
