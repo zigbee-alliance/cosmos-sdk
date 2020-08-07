@@ -365,7 +365,7 @@ func (suite *KeeperTestSuite) TestCheckMisbehaviourAndUpdateState() {
 
 				return err
 			},
-			true,
+			false,
 		},
 		{
 			"trusted ConsensusState2 not found",
@@ -382,7 +382,7 @@ func (suite *KeeperTestSuite) TestCheckMisbehaviourAndUpdateState() {
 
 				return err
 			},
-			true,
+			false,
 		},
 
 		{
