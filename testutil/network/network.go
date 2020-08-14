@@ -13,8 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cosmos/cosmos-sdk/client/tx"
-
 	"github.com/stretchr/testify/require"
 	tmcfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/crypto"
@@ -24,15 +22,19 @@ import (
 	"github.com/tendermint/tendermint/node"
 	tmclient "github.com/tendermint/tendermint/rpc/client"
 	dbm "github.com/tendermint/tm-db"
+	"google.golang.org/grpc"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
-	clientkeys "github.com/cosmos/cosmos-sdk/client/keys"
+	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/server/api"
 	srvconfig "github.com/cosmos/cosmos-sdk/server/config"
+	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/simapp"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -47,11 +49,12 @@ var lock = new(sync.Mutex)
 
 // AppConstructor defines a function which accepts a network configuration and
 // creates an ABCI Application to provide to Tendermint.
-type AppConstructor = func(val Validator) server.Application
+type AppConstructor = func(val Validator) servertypes.Application
 
-func NewSimApp(val Validator) server.Application {
+func NewSimApp(val Validator) servertypes.Application {
 	return simapp.NewSimApp(
 		val.Ctx.Logger, dbm.NewMemDB(), nil, true, make(map[int64]bool), val.Ctx.Config.RootDir, 0,
+		simapp.MakeEncodingConfig(),
 		baseapp.SetPruning(storetypes.NewPruningOptionsFromString(val.AppConfig.Pruning)),
 		baseapp.SetMinGasPrices(val.AppConfig.MinGasPrices),
 	)
@@ -60,23 +63,26 @@ func NewSimApp(val Validator) server.Application {
 // Config defines the necessary configuration used to bootstrap and start an
 // in-process local testing network.
 type Config struct {
-	Codec            codec.Marshaler
-	TxConfig         client.TxConfig
-	AccountRetriever client.AccountRetriever
-	AppConstructor   AppConstructor             // the ABCI application constructor
-	GenesisState     map[string]json.RawMessage // custom gensis state to provide
-	TimeoutCommit    time.Duration              // the consensus commitment timeout
-	ChainID          string                     // the network chain-id
-	NumValidators    int                        // the total number of validators to create and bond
-	BondDenom        string                     // the staking bond denomination
-	MinGasPrices     string                     // the minimum gas prices each validator will accept
-	Passphrase       string                     // the passphrase provided to the test keyring
-	AccountTokens    sdk.Int                    // the amount of unique validator tokens (e.g. 1000node0)
-	StakingTokens    sdk.Int                    // the amount of tokens each validator has available to stake
-	BondedTokens     sdk.Int                    // the amount of tokens each validator stakes
-	PruningStrategy  string                     // the pruning strategy each validator will have
-	EnableLogging    bool                       // enable Tendermint logging to STDOUT
-	CleanupDir       bool                       // remove base temporary directory during cleanup
+	Codec             codec.Marshaler
+	LegacyAmino       *codec.LegacyAmino // TODO: Remove!
+	InterfaceRegistry codectypes.InterfaceRegistry
+	TxConfig          client.TxConfig
+	AccountRetriever  client.AccountRetriever
+	AppConstructor    AppConstructor             // the ABCI application constructor
+	GenesisState      map[string]json.RawMessage // custom gensis state to provide
+	TimeoutCommit     time.Duration              // the consensus commitment timeout
+	ChainID           string                     // the network chain-id
+	NumValidators     int                        // the total number of validators to create and bond
+	BondDenom         string                     // the staking bond denomination
+	MinGasPrices      string                     // the minimum gas prices each validator will accept
+	AccountTokens     sdk.Int                    // the amount of unique validator tokens (e.g. 1000node0)
+	StakingTokens     sdk.Int                    // the amount of tokens each validator has available to stake
+	BondedTokens      sdk.Int                    // the amount of tokens each validator stakes
+	PruningStrategy   string                     // the pruning strategy each validator will have
+	EnableLogging     bool                       // enable Tendermint logging to STDOUT
+	CleanupDir        bool                       // remove base temporary directory during cleanup
+	SigningAlgo       string                     // signing algorithm for keys
+	KeyringOptions    []keyring.Option
 }
 
 // DefaultConfig returns a sane default configuration suitable for nearly all
@@ -85,22 +91,25 @@ func DefaultConfig() Config {
 	encCfg := simapp.MakeEncodingConfig()
 
 	return Config{
-		Codec:            encCfg.Marshaler,
-		TxConfig:         encCfg.TxConfig,
-		AccountRetriever: authtypes.NewAccountRetriever(encCfg.Marshaler),
-		AppConstructor:   NewSimApp,
-		GenesisState:     simapp.ModuleBasics.DefaultGenesis(encCfg.Marshaler),
-		TimeoutCommit:    2 * time.Second,
-		ChainID:          "chain-" + tmrand.NewRand().Str(6),
-		NumValidators:    4,
-		BondDenom:        sdk.DefaultBondDenom,
-		MinGasPrices:     fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom),
-		Passphrase:       clientkeys.DefaultKeyPass,
-		AccountTokens:    sdk.TokensFromConsensusPower(1000),
-		StakingTokens:    sdk.TokensFromConsensusPower(500),
-		BondedTokens:     sdk.TokensFromConsensusPower(100),
-		PruningStrategy:  storetypes.PruningOptionNothing,
-		CleanupDir:       true,
+		Codec:             encCfg.Marshaler,
+		TxConfig:          encCfg.TxConfig,
+		LegacyAmino:       encCfg.Amino,
+		InterfaceRegistry: encCfg.InterfaceRegistry,
+		AccountRetriever:  authtypes.AccountRetriever{},
+		AppConstructor:    NewSimApp,
+		GenesisState:      simapp.ModuleBasics.DefaultGenesis(encCfg.Marshaler),
+		TimeoutCommit:     2 * time.Second,
+		ChainID:           "chain-" + tmrand.NewRand().Str(6),
+		NumValidators:     4,
+		BondDenom:         sdk.DefaultBondDenom,
+		MinGasPrices:      fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom),
+		AccountTokens:     sdk.TokensFromConsensusPower(1000),
+		StakingTokens:     sdk.TokensFromConsensusPower(500),
+		BondedTokens:      sdk.TokensFromConsensusPower(100),
+		PruningStrategy:   storetypes.PruningOptionNothing,
+		CleanupDir:        true,
+		SigningAlgo:       string(hd.Secp256k1Type),
+		KeyringOptions:    []keyring.Option{},
 	}
 }
 
@@ -120,7 +129,7 @@ type (
 		BaseDir    string
 		Validators []*Validator
 
-		config Config
+		Config Config
 	}
 
 	// Validator defines an in-process Tendermint validator node. Through this object,
@@ -143,6 +152,7 @@ type (
 
 		tmNode *node.Node
 		api    *api.Server
+		grpc   *grpc.Server
 	}
 )
 
@@ -159,7 +169,7 @@ func New(t *testing.T, cfg Config) *Network {
 		T:          t,
 		BaseDir:    baseDir,
 		Validators: make([]*Validator, cfg.NumValidators),
-		config:     cfg,
+		Config:     cfg,
 	}
 
 	t.Log("preparing test network...")
@@ -189,10 +199,11 @@ func New(t *testing.T, cfg Config) *Network {
 		tmCfg := ctx.Config
 		tmCfg.Consensus.TimeoutCommit = cfg.TimeoutCommit
 
-		// Only allow the first validator to expose an RPC and API server/client
-		// due to Tendermint in-process constraints.
+		// Only allow the first validator to expose an RPC, API and gRPC
+		// server/client due to Tendermint in-process constraints.
 		apiAddr := ""
 		tmCfg.RPC.ListenAddress = ""
+		appCfg.GRPC.Enable = false
 		if i == 0 {
 			apiListenAddr, _, err := server.FreeTCPAddr()
 			require.NoError(t, err)
@@ -205,6 +216,11 @@ func New(t *testing.T, cfg Config) *Network {
 			rpcAddr, _, err := server.FreeTCPAddr()
 			require.NoError(t, err)
 			tmCfg.RPC.ListenAddress = rpcAddr
+
+			_, grpcPort, err := server.FreeTCPAddr()
+			require.NoError(t, err)
+			appCfg.GRPC.Address = fmt.Sprintf("0.0.0.0:%s", grpcPort)
+			appCfg.GRPC.Enable = true
 		}
 
 		logger := log.NewNopLogger()
@@ -242,10 +258,14 @@ func New(t *testing.T, cfg Config) *Network {
 		nodeIDs[i] = nodeID
 		valPubKeys[i] = pubKey
 
-		kb, err := keyring.New(sdk.KeyringServiceName(), keyring.BackendTest, clientDir, buf)
+		kb, err := keyring.New(sdk.KeyringServiceName(), keyring.BackendTest, clientDir, buf, cfg.KeyringOptions...)
 		require.NoError(t, err)
 
-		addr, secret, err := server.GenerateSaveCoinKey(kb, nodeDirName, cfg.Passphrase, true)
+		keyringAlgos, _ := kb.SupportedAlgorithms()
+		algo, err := keyring.NewSigningAlgoFromString(cfg.SigningAlgo, keyringAlgos)
+		require.NoError(t, err)
+
+		addr, secret, err := server.GenerateSaveCoinKey(kb, nodeDirName, true, algo)
 		require.NoError(t, err)
 
 		info := map[string]string{"secret": secret}
@@ -305,8 +325,10 @@ func New(t *testing.T, cfg Config) *Network {
 			WithHomeDir(tmCfg.RootDir).
 			WithChainID(cfg.ChainID).
 			WithJSONMarshaler(cfg.Codec).
+			WithLegacyAmino(cfg.LegacyAmino).
 			WithTxConfig(cfg.TxConfig).
-			WithAccountRetriever(cfg.AccountRetriever)
+			WithAccountRetriever(cfg.AccountRetriever).
+			WithInterfaceRegistry(cfg.InterfaceRegistry)
 
 		network.Validators[i] = &Validator{
 			AppConfig:  appCfg,
@@ -429,9 +451,13 @@ func (n *Network) Cleanup() {
 		if v.api != nil {
 			_ = v.api.Close()
 		}
+
+		if v.grpc != nil {
+			v.grpc.Stop()
+		}
 	}
 
-	if n.config.CleanupDir {
+	if n.Config.CleanupDir {
 		_ = os.RemoveAll(n.BaseDir)
 	}
 
