@@ -33,7 +33,7 @@ func RequireProof(subpath string) bool {
 	// Currently, only when query subpath is "/key", will proof be included in
 	// response. If there are some changes about proof building in iavlstore.go,
 	// we must change code here to keep consistency with iavlStore#Query.
-	return subpath == "/key"
+	return subpath == "/key" || subpath == "/range"
 }
 
 //-----------------------------------------------------------------------------

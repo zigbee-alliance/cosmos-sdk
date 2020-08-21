@@ -278,6 +278,33 @@ func (st *Store) Query(req abci.RequestQuery) (res abci.ResponseQuery) {
 			_, res.Value = tree.GetVersioned(key, res.Height)
 		}
 
+	case "/range":
+		if !st.VersionExists(res.Height) {
+			res.Log = cmn.ErrorWrap(iavl.ErrVersionDoesNotExist, "").Error()
+			break
+		}
+
+		var rangeReq RangeReq
+		cdc.MustUnmarshalBinaryBare(req.Data, &rangeReq)
+
+		keys, values, proof, err := tree.GetVersionedRangeWithProof(rangeReq.StartKey, rangeReq.EndKey, rangeReq.Limit, res.Height)
+
+		if err != nil {
+			res.Log = err.Error()
+			break
+		}
+
+		rangeRes := RangeRes{
+			keys:   keys,
+			values: values,
+		}
+
+		if req.Prove {
+			res.Proof = &merkle.Proof{Ops: []merkle.ProofOp{NewIAVLRangeOp(req.Data, proof).ProofOp()}}
+		}
+
+		res.Value = cdc.MustMarshalBinaryBare(rangeRes)
+
 	case "/subspace":
 		var KVs []types.KVPair
 

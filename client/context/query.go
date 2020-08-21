@@ -2,6 +2,7 @@ package context
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/store/iavl"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -46,6 +47,13 @@ func (ctx CLIContext) QueryWithData(path string, data []byte) ([]byte, int64, er
 // store name. It returns the result and height of the query upon success
 // or an error if the query fails.
 func (ctx CLIContext) QueryStore(key cmn.HexBytes, storeName string) ([]byte, int64, error) {
+	return ctx.queryStore(key, storeName, "key")
+}
+
+// QueryRange performs a query to a Tendermint node with the provided iavl.RangeReq and
+// store name. It returns the iavl.RangeRes and height of the query upon success
+// or an error if the query fails.
+func (ctx CLIContext) QueryRange(req iavl.RangeReq, storeName string) (iavl.RangeRes, int64, error) {
 	return ctx.queryStore(key, storeName, "key")
 }
 
@@ -173,7 +181,7 @@ func (ctx CLIContext) queryStore(key cmn.HexBytes, storeName, endPath string) ([
 }
 
 // isQueryStoreWithProof expects a format like /<queryType>/<storeName>/<subpath>
-// queryType must be "store" and subpath must be "key" to require a proof.
+// queryType must be "store" and subpath must be "key" or "range" to require a proof.
 func isQueryStoreWithProof(path string) bool {
 	if !strings.HasPrefix(path, "/") {
 		return false

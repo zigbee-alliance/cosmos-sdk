@@ -28,6 +28,7 @@ type (
 		VersionExists(version int64) bool
 		GetVersioned(key []byte, version int64) (int64, []byte)
 		GetVersionedWithProof(key []byte, version int64) ([]byte, *iavl.RangeProof, error)
+		GetVersionedRangeWithProof(startKey, endKey []byte, limit int, version int64) (keys, values [][]byte, proof *iavl.RangeProof, err error)
 		GetImmutable(version int64) (*iavl.ImmutableTree, error)
 	}
 
@@ -73,6 +74,14 @@ func (it *immutableTree) GetVersionedWithProof(key []byte, version int64) ([]byt
 	}
 
 	return it.GetWithProof(key)
+}
+
+func (it *immutableTree) GetVersionedRangeWithProof(startKey, endKey []byte, limit int, version int64) (keys, values [][]byte, proof *iavl.RangeProof, err error) {
+	if it.Version() != version {
+		return nil, nil, nil, fmt.Errorf("version mismatch on immutable IAVL tree; got: %d, expected: %d", version, it.Version())
+	}
+
+	return it.GetRangeWithProof(startKey, endKey, limit)
 }
 
 func (it *immutableTree) GetImmutable(version int64) (*iavl.ImmutableTree, error) {
