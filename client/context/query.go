@@ -54,7 +54,16 @@ func (ctx CLIContext) QueryStore(key cmn.HexBytes, storeName string) ([]byte, in
 // store name. It returns the iavl.RangeRes and height of the query upon success
 // or an error if the query fails.
 func (ctx CLIContext) QueryRange(req iavl.RangeReq, storeName string) (iavl.RangeRes, int64, error) {
-	return ctx.queryStore(key, storeName, "key")
+	reqBytes := ctx.Codec.MustMarshalBinaryBare(req)
+
+	resBytes, height, err := ctx.queryStore(reqBytes, storeName, "range")
+	if err != nil {
+		return iavl.RangeRes{}, 0, err
+	}
+
+	var res iavl.RangeRes
+	ctx.Codec.MustUnmarshalBinaryBare(resBytes, &res)
+	return res, height, err
 }
 
 // QuerySubspace performs a query to a Tendermint node with the provided
@@ -200,7 +209,7 @@ func isQueryStoreWithProof(path string) bool {
 	return false
 }
 
-// parseQueryStorePath expects a format like /store/<storeName>/key.
+// parseQueryStorePath expects a format like /store/<storeName>/key or /store/<storeName>/range.
 func parseQueryStorePath(path string) (storeName string, err error) {
 	if !strings.HasPrefix(path, "/") {
 		return "", errors.New("expected path to start with /")
@@ -209,11 +218,11 @@ func parseQueryStorePath(path string) (storeName string, err error) {
 	paths := strings.SplitN(path[1:], "/", 3)
 	switch {
 	case len(paths) != 3:
-		return "", errors.New("expected format like /store/<storeName>/key")
+		return "", errors.New("expected format like /store/<storeName>/key or /store/<storeName>/range")
 	case paths[0] != "store":
-		return "", errors.New("expected format like /store/<storeName>/key")
-	case paths[2] != "key":
-		return "", errors.New("expected format like /store/<storeName>/key")
+		return "", errors.New("expected format like /store/<storeName>/key or /store/<storeName>/range")
+	case paths[2] != "key" && paths[2] != "range":
+		return "", errors.New("expected format like /store/<storeName>/key or /store/<storeName>/range")
 	}
 
 	return paths[1], nil

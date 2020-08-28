@@ -7,6 +7,6 @@ type RangeReq struct {
 }
 
 type RangeRes struct {
-	keys   [][]byte
-	values [][]byte
+	Keys   [][]byte
+	Values [][]byte
 }

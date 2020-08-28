@@ -295,14 +295,14 @@ func (st *Store) Query(req abci.RequestQuery) (res abci.ResponseQuery) {
 		}
 
 		rangeRes := RangeRes{
-			keys:   keys,
-			values: values,
+			Keys:   keys,
+			Values: values,
 		}
 
 		if req.Prove {
 			res.Proof = &merkle.Proof{Ops: []merkle.ProofOp{NewIAVLRangeOp(req.Data, proof).ProofOp()}}
 		}
-
+		res.Key = req.Data
 		res.Value = cdc.MustMarshalBinaryBare(rangeRes)
 
 	case "/subspace":

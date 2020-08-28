@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
+	sdkiavl "github.com/cosmos/cosmos-sdk/store/iavl"
 	"github.com/tendermint/iavl"
 	"github.com/tendermint/tendermint/crypto/merkle"
 	cmn "github.com/tendermint/tendermint/libs/common"
@@ -131,6 +132,7 @@ func DefaultProofRuntime() (prt *merkle.ProofRuntime) {
 	prt.RegisterOpDecoder(merkle.ProofOpSimpleValue, merkle.SimpleValueOpDecoder)
 	prt.RegisterOpDecoder(iavl.ProofOpIAVLValue, iavl.IAVLValueOpDecoder)
 	prt.RegisterOpDecoder(iavl.ProofOpIAVLAbsence, iavl.IAVLAbsenceOpDecoder)
+	prt.RegisterOpDecoder(sdkiavl.ProofOpIAVLRange, sdkiavl.IAVLRangeOpDecoder)
 	prt.RegisterOpDecoder(ProofOpMultiStore, MultiStoreProofOpDecoder)
 	return
 }

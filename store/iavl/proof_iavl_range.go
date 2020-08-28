@@ -58,12 +58,15 @@ func (op IAVLRangeOp) String() string {
 	return fmt.Sprintf("IAVLRangeOp{%v}", op.GetKey())
 }
 
+// args contain single value - binary encored RangeRes
 func (op IAVLRangeOp) Run(args [][]byte) ([][]byte, error) {
-	// TODO
-	//if len(args) != 1 {
-	//	return nil, errors.New("Value size is not 1")
-	//}
-	//value := args[0]
+	if len(args) != 1 {
+		return nil, errors.New("Value size is not 1")
+	}
+
+	valueBytes := args[0]
+	var value RangeRes
+	cdc.MustUnmarshalBinaryBare(valueBytes, &value)
 
 	// Compute the root hash and assume it is valid.
 	// The caller checks the ultimate root later.
@@ -73,13 +76,13 @@ func (op IAVLRangeOp) Run(args [][]byte) ([][]byte, error) {
 		return nil, errors.Wrap(err, "computing root hash")
 	}
 
-	// XXX What is the encoding for keys?
-	// We should decode the key depending on whether it's a string or hex,
-	// maybe based on quotes and 0x prefix?
-	//err = op.Proof.VerifyItem([]byte(op.key), value)
-	//if err != nil {
-	//	return nil, errors.Wrap(err, "verifying value")
-	//}
+	// TODO: Think more about validation logic. Need to check sequence and borders.
+	for i, _ := range value.Keys {
+		err := op.Proof.VerifyItem(value.Keys[i], value.Values[i])
+		if err != nil {
+			return nil, errors.Wrap(err, "verifying value")
+		}
+	}
 
 	return [][]byte{root}, nil
 }
