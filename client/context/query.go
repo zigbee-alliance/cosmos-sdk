@@ -54,7 +54,7 @@ func (ctx CLIContext) QueryStore(key cmn.HexBytes, storeName string) ([]byte, in
 // store name. It returns the iavl.RangeRes and height of the query upon success
 // or an error if the query fails.
 func (ctx CLIContext) QueryRange(req iavl.RangeReq, storeName string) (iavl.RangeRes, int64, error) {
-	reqBytes := ctx.Codec.MustMarshalBinaryBare(req)
+	reqBytes := ctx.Codec.MustMarshalBinaryLengthPrefixed(req)
 
 	resBytes, height, err := ctx.queryStore(reqBytes, storeName, "range")
 	if err != nil {
@@ -62,7 +62,7 @@ func (ctx CLIContext) QueryRange(req iavl.RangeReq, storeName string) (iavl.Rang
 	}
 
 	var res iavl.RangeRes
-	ctx.Codec.MustUnmarshalBinaryBare(resBytes, &res)
+	ctx.Codec.MustUnmarshalBinaryLengthPrefixed(resBytes, &res)
 	return res, height, err
 }
 

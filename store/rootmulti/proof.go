@@ -31,7 +31,7 @@ func (proof *MultiStoreProof) ComputeRootHash() []byte {
 // RequireProof returns whether proof is required for the subpath.
 func RequireProof(subpath string) bool {
 	// XXX: create a better convention.
-	// Currently, only when query subpath is "/key", will proof be included in
+	// Currently, only when query subpath is "/key" or "/range", will proof be included in
 	// response. If there are some changes about proof building in iavlstore.go,
 	// we must change code here to keep consistency with iavlStore#Query.
 	return subpath == "/key" || subpath == "/range"

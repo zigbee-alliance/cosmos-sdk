@@ -12,10 +12,10 @@ func TestCdc(t *testing.T) {
 		Limit:    20,
 	}
 
-	bytes := cdc.MustMarshalBinaryBare(rangeQuery)
+	bytes := cdc.MustMarshalBinaryLengthPrefixed(rangeQuery)
 
 	var decoded RangeReq
-	cdc.MustUnmarshalBinaryBare(bytes, &decoded)
+	cdc.MustUnmarshalBinaryLengthPrefixed(bytes, &decoded)
 
 	assert.NotNil(t, decoded)
 	assert.Equal(t, rangeQuery.StartKey, decoded.StartKey)

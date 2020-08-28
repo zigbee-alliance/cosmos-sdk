@@ -66,7 +66,7 @@ func (op IAVLRangeOp) Run(args [][]byte) ([][]byte, error) {
 
 	valueBytes := args[0]
 	var value RangeRes
-	cdc.MustUnmarshalBinaryBare(valueBytes, &value)
+	cdc.MustUnmarshalBinaryLengthPrefixed(valueBytes, &value)
 
 	// Compute the root hash and assume it is valid.
 	// The caller checks the ultimate root later.

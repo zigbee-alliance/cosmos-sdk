@@ -285,7 +285,7 @@ func (st *Store) Query(req abci.RequestQuery) (res abci.ResponseQuery) {
 		}
 
 		var rangeReq RangeReq
-		cdc.MustUnmarshalBinaryBare(req.Data, &rangeReq)
+		cdc.MustUnmarshalBinaryLengthPrefixed(req.Data, &rangeReq)
 
 		keys, values, proof, err := tree.GetVersionedRangeWithProof(rangeReq.StartKey, rangeReq.EndKey, rangeReq.Limit, res.Height)
 
@@ -303,7 +303,7 @@ func (st *Store) Query(req abci.RequestQuery) (res abci.ResponseQuery) {
 			res.Proof = &merkle.Proof{Ops: []merkle.ProofOp{NewIAVLRangeOp(req.Data, proof).ProofOp()}}
 		}
 		res.Key = req.Data
-		res.Value = cdc.MustMarshalBinaryBare(rangeRes)
+		res.Value = cdc.MustMarshalBinaryLengthPrefixed(rangeRes)
 
 	case "/subspace":
 		var KVs []types.KVPair
