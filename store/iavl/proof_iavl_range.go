@@ -61,12 +61,16 @@ func (op IAVLRangeOp) String() string {
 // args contain single value - binary encored RangeRes
 func (op IAVLRangeOp) Run(args [][]byte) ([][]byte, error) {
 	if len(args) != 1 {
-		return nil, errors.New("Value size is not 1")
+		return nil, errors.New("value size is not 1")
 	}
 
 	valueBytes := args[0]
 	var value RangeRes
 	cdc.MustUnmarshalBinaryLengthPrefixed(valueBytes, &value)
+
+	if len(value.Keys) != len(value.Values) {
+		return nil, errors.New("keys length doesn't match values length")
+	}
 
 	// Compute the root hash and assume it is valid.
 	// The caller checks the ultimate root later.
